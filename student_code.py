@@ -166,8 +166,6 @@ class KnowledgeBase(object):
                 
                 
                 
-        
-        print('VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV', len(f_r.supports_rules))
         for r in f_r.supports_rules:
             ind3 = r.supported_by.index(f_r)
             #print('***************************************************', r.supported_by[ind3])
@@ -217,15 +215,42 @@ class KnowledgeBase(object):
         """
         f_r = self.find_in_kb(fact_or_rule)
         if f_r == False:
-            return False 
-
-
-        if isinstance(f_r, Fact) and len(f_r.supported_by) == 0:
+            if isinstance(fact_or_rule, Fact):
                 return "Fact is not in the KB"
-        if isinstance(f_r, Rule) and len(f_r.supported_by) == 0:
+            elif isinstance(fact_or_rule, Rule):
                 return "Rule is not in the KB"
+            else:
+                return False
+
+
+        #if isinstance(f_r, Fact) and len(f_r.supported_by) == 0:
+        #        return "Fact is not in the KB"
+        #if isinstance(f_r, Rule) and len(f_r.supported_by) == 0:
+        #        return "Rule is not in the KB"
         
         string_answer = ""
+        if len(f_r.supported_by) == 0:
+            if isinstance(f_r, Fact):
+                string_answer += "fact: "   
+                string_answer += str(f_r.statement)
+                string_answer += " ASSERTED"
+            if isinstance(f_r, Rule):
+                string_answer += "rule: ("
+                if len(f_r.lhs) > 1:
+                    incr = 0
+                    for r in f_r.lhs:
+                        string_answer += str(r)
+                        if incr == len(f_r.lhs) -1:
+                            break
+                        string_answer += ', '
+                        incr += 1
+                else:
+                    string_answer += str(f_r.lhs[0])
+
+                string_answer += ") -> "
+                string_answer += str(f_r.rhs)
+                string_answer += ' ASSERTED\n'
+
 
         if len(f_r.supported_by) > 0:
             stack = [] 
@@ -241,28 +266,51 @@ class KnowledgeBase(object):
                 string_answer += str(f_r.rhs)
                 string_answer += '\n'
 
+            spaces = "  " 
+            counter = -2
             for supports in f_r.supported_by:
-                
-                stack.append(supports)
-            spaces = "" 
+                stack.append([supports, counter])
+            stack = stack[::-1]
+            
             while len(stack) > 0:
-
-                string_answer += spaces 
-                string_answer += "SUPPORTED BY\n"
                 tmp = stack.pop()
-                #print(type(tmp), '\n\n------------------------')
-                new_fr1 = self.find_in_kb(tmp[0])
-                new_fr2 = self.find_in_kb(tmp[1])
+                
+                #print(tmp[0][0])
+
+                new_fr1 = self.find_in_kb(tmp[0][0])
+                new_fr2 = self.find_in_kb(tmp[0][1])
+                new_counter = tmp[1]
+                new_counter += 4
+
+                #string_answer += "                    " 
+                #string_answer += str(new_counter)
+                s = self.make_str(new_counter)
+                string_answer += s
+                #string_answer += spaces 
+                string_answer += "SUPPORTED BY\n"
 
                 if isinstance(new_fr1, Fact) and isinstance(new_fr2, Rule): 
+                    string_answer += s 
+                    string_answer += "  "
                     string_answer += "fact: "
                     string_answer += str(new_fr1.statement)
                     if self.is_asserted(new_fr1):
                         string_answer += " ASSERTED"
                     string_answer += '\n'
+                    string_answer += s 
+                    string_answer += "  "
                     string_answer += "rule: ("
-                    for r in new_fr2.lhs:
-                        string_answer += str(r)
+                    if len(new_fr2.lhs) > 1:
+                        incr = 0
+                        for r in new_fr2.lhs:
+                            string_answer += str(r)
+                            if incr == len(new_fr2.lhs) -1:
+                                break
+                            string_answer += ', '
+                            incr += 1
+                    else:
+                        string_answer += str(new_fr2.lhs[0])
+
                     string_answer += ") -> "
                     string_answer += str(new_fr2.rhs)
                     if self.is_asserted(new_fr2):
@@ -270,38 +318,58 @@ class KnowledgeBase(object):
                     string_answer += '\n'
 
                 if isinstance(new_fr2, Fact) and isinstance(new_fr1, Rule):
+                    string_answer += s 
+                    string_answer += "  "
                     string_answer += "fact: "
                     string_answer += str(new_fr2.statement)
                     if self.is_asserted(new_fr2):
                         string_answer += " ASSERTED"
                     string_answer += '\n'
+                    string_answer += s 
+                    string_answer += "  "
                     string_answer += "rule: ("
-                    for r in new_fr1.lhs:
-                        string_answer += str(r)
+                    if len(new_fr2.lhs) > 1:
+                        incr = 0
+                        for r in new_fr2.lhs:
+                            string_answer += str(r)
+                            if incr == len(new_fr2.lhs) -1:
+                                break
+                            string_answer += ', '
+                            incr += 1
+                    else:
+                        string_answer += str(new_fr2.lhs[0])
+
                     string_answer += ") -> "
                     string_answer += str(new_fr1.rhs)
                     if self.is_asserted(new_fr1):
                         string_answer += " ASSERTED"
                     string_answer += '\n'
-
-
                 #print('wwwwwwwwwww', type(new_fr))
                 if new_fr1 != False and new_fr2 != False: 
                     
-                    for supports in new_fr1.supported_by:
-
-                        stack.append(supports)
-                    for supports in new_fr2.supported_by:
-                        stack.append(supports)
-
+                    #for supports in new_fr1.supported_by:
+                    #    stack.append([supports,new_counter])
+                    #for i in range(len(new_fr1.supported_by), 0, -1):
+                    #    print('--------------- this far' , i)
+                    #    stack.append([new_fr1.supported_by[i], new_counter]) 
+                    if len(new_fr1.supported_by) > 0:
+                        for j in reversed(range(0, len(new_fr1.supported_by))):
+                            stack.append([new_fr1.supported_by[j], new_counter])    
+                    
+                    #for supports in new_fr2.supported_by:
+                    #    stack.append([supports,new_counter])
+                    if len(new_fr2.supported_by) > 0:
+                        for j in reversed(range(0, len(new_fr2.supported_by))):
+                            stack.append([new_fr2.supported_by[j], new_counter])
+                    
             
         return string_answer
 
     def find_in_kb(self, fact_or_rule):
-        if isinstance(fact_or_rule, Fact):
+        if isinstance(fact_or_rule, Fact) and fact_or_rule in self.facts:
             ind = self.facts.index(fact_or_rule)
             return self.facts[ind]
-        elif isinstance(fact_or_rule, Rule):
+        elif isinstance(fact_or_rule, Rule) and fact_or_rule in self.rules:
             ind = self.rules.index(fact_or_rule)
             return self.rules[ind]
         else:
@@ -311,7 +379,12 @@ class KnowledgeBase(object):
             return True
         else:
             return False
-        
+
+    def make_str(self, length):
+        s = ""
+        for i in range(length):
+            s += " "
+        return s
 
 class InferenceEngine(object):
     def fc_infer(self, fact, rule, kb):
