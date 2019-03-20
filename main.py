@@ -8,22 +8,22 @@ class KBTest(unittest.TestCase):
     def setUp(self):
         # # Assert starter facts
         self.KB = KnowledgeBase([], [])
-        
+
     def compare(self, expected, actual):
         elist = expected.split('\n')
         alist = actual.split('\n')
         for e, a in zip(elist, alist):
             if e.lower() != a.rstrip().lower():
-                self.assertEqual('"{0}" ({1} lead spaces)'.format(e, len(e) - len(e.lstrip())), 
+                self.assertEqual('"{0}" ({1} lead spaces)'.format(e, len(e) - len(e.lstrip())),
                     '"{0}" ({1} lead spaces)'.format(a, len(a) - len(a.strip())))
-    
+
     def test01(self):
         # KB does not contain
         actual = self.KB.kb_explain(read.parse_input("fact: (notContains kb fact)"))
         self.compare("Fact is not in the KB", actual)
         actual = self.KB.kb_explain(read.parse_input("rule: ((contains bowl flour) (contains bowl water)) -> (contains bowl wetFlour)"))
         self.compare("Rule is not in the KB", actual)
-    
+
     def test02(self):
         # asserted
         f1 = read.parse_input("fact: (genls nyala antelope)")
@@ -44,7 +44,7 @@ class KBTest(unittest.TestCase):
         # first set of support
         f0.supported_by.append([f3, r4])
         r4.supported_by.append([f2, r3])
-        r3.supported_by.append([f1, r1])        
+        r3.supported_by.append([f1, r1])
 
         # second set of support
         f0.supported_by.append([f4, r5])
@@ -87,93 +87,9 @@ fact: (eats nyala leaves)\n\
         #print(actual)
         self.compare(self.expected, actual)
 
-        actual = self.KB.kb_explain(read.parse_input("fact: (eats nyala leaves)"))
-        self.compare(self.expected, actual)
-
-        a2 = self.KB.kb_explain(read.parse_input("fact: (genls nyala antelope)"))
-        str_a2 = "fact: (genls nyala antelope) ASSERTED\n"
-        self.compare(a2, str_a2)
-        #print(a2)
-        a3 = self.KB.kb_explain(read.parse_input("rule: ((genls ?x ?y) (genls ?y ?z) (eats ?z leaves)) -> (eats ?x leaves)"))
-        str_a3 = "rule: ((genls ?x ?y), (genls ?y ?z), (eats ?z leaves)) -> (eats ?x leaves) ASSERTED\n"
-        #print(a3)
-        self.compare(a3, str_a3)
-
-
-    def test03(self):
-        # asserted
-        f1 = read.parse_input("fact: (genls nyala antelope)")
-        f2 = read.parse_input("fact: (genls antelope herbivore)")
-        f3 = read.parse_input("fact: (eats herbivore leaves)")
-        f4 = read.parse_input("fact: (isa leaves plantBasedFood)")
-        f5 = read.parse_input("fact: (eats nyala plantBasedFood)")
-
-        r1 = read.parse_input("rule: ((genls ?x ?y) (genls ?y ?z) (eats ?z leaves)) -> (eats ?x leaves)")
-        r2 = read.parse_input("rule: ((eats ?x plantBasedFood) (isa ?y plantBasedFood)) -> (eats ?x ?y)")
-
-        # inferred
-        f0 = read.parse_input("fact: (eats nyala leaves)")
-        r3 = read.parse_input("rule: ((genls antelope ?z) (eats ?z leaves)) -> (eats nyala leaves)")
-        r4 = read.parse_input("rule: ((eats herbivore leaves)) -> (eats nyala leaves)")
-        r5 = read.parse_input("rule: ((isa ?y plantBasedFood)) -> (eats nyala ?y)")
-
-        f6 = read.parse_input("fact: (the rams will win")
-        r6 = read.parse_input("rule: ((YOU SHALL NOT PASS) (okay i will let you pass)) -> (MORDOR IS OURS)")
-
-        # first set of support
-        f0.supported_by.append([f3, r4])
-        r4.supported_by.append([f2, r3])
-
-        #new support
-        r4.supported_by.append([f6, r6])
         
-        r3.supported_by.append([f1, r1])        
 
-        # second set of support
-        f0.supported_by.append([f4, r5])
-        r5.supported_by.append([f5, r2])
 
-        f1.asserted = True
-        f2.asserted = True
-        f3.asserted = True
-        f4.asserted = True
-        r1.asserted = True
-        r2.asserted = True
 
-        f0.asserted = False
-        r3.asserted = False
-        r4.asserted = False
-        r5.asserted = False
-
-        r6.asserted = True
-        f6.asserted = True
-
-        self.KB.facts.extend([f0,f1,f2,f3,f4,f5,f6])
-        self.KB.rules.extend([r1,r2,r3,r4,r5,r6])
-
-        self.expected = '\
-fact: (eats nyala leaves)\n\
-  SUPPORTED BY\n\
-    fact: (eats herbivore leaves) ASSERTED\n\
-    rule: ((eats herbivore leaves)) -> (eats nyala leaves)\n\
-      SUPPORTED BY\n\
-        fact: (genls antelope herbivore) ASSERTED\n\
-        rule: ((genls antelope ?z), (eats ?z leaves)) -> (eats nyala leaves)\n\
-          SUPPORTED BY\n\
-            fact: (genls nyala antelope) ASSERTED\n\
-            rule: ((genls ?x ?y), (genls ?y ?z), (eats ?z leaves)) -> (eats ?x leaves) ASSERTED\n\
-      SUPPORTED BY\n\
-        fact: (the rams will win) ASSERTED\n\
-        rule: ((YOU SHALL NOT PASS), (okay i will let you pass)) -> (MORDOR IS OURS) ASSERTED\n\
-  SUPPORTED BY\n\
-    fact: (isa leaves plantBasedFood) ASSERTED\n\
-    rule: ((isa ?y plantBasedFood)) -> (eats nyala ?y)\n\
-      SUPPORTED BY\n\
-        fact: (eats nyala plantBasedFood) ASSERTED\n\
-        rule: ((eats ?x plantBasedFood), (isa ?y plantBasedFood)) -> (eats ?x ?y) ASSERTED\
-'
-        actual = self.KB.kb_explain(read.parse_input("fact: (eats nyala leaves)"))
-        #print(actual)
-        self.compare(self.expected, actual)
 if __name__ == '__main__':
     unittest.main()

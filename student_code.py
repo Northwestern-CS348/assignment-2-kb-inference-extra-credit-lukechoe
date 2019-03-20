@@ -109,7 +109,7 @@ class KnowledgeBase(object):
             print("Invalid ask:", fact.statement)
             return []
 
-            # Make sure to write edge case that if the retracted fact 
+            # Make sure to write edge case that if the retracted fact
             # is supported by something -  exit?
     def kb_retract(self, fact_or_rule):
         """Retract a fact from the KB
@@ -135,16 +135,16 @@ class KnowledgeBase(object):
         else:
             print("Fact/Rule not found???????")
             return
-        
-        
+
+
         if isinstance(f_r, Rule) and len(f_r.supported_by) == 0:
             return
         if len(f_r.supported_by) > 0:
             return
 
-    
+
         for f in f_r.supports_facts:
-            
+
             ind3 = f.supported_by.index(f_r)
             if ind3 % 2 == 1:
                 tmp = f.supported_by[ind3-1]
@@ -163,9 +163,9 @@ class KnowledgeBase(object):
                 temp = self.facts[ind3]
                 #self.facts.remove(self.facts[ind3])
                 self.kb_retract(temp)
-                
-                
-                
+
+
+
         for r in f_r.supports_rules:
             ind3 = r.supported_by.index(f_r)
             #print('***************************************************', r.supported_by[ind3])
@@ -188,10 +188,12 @@ class KnowledgeBase(object):
                 temp = self.rules[ind3]
                 self.rules.remove(self.rules[ind3])
                 self.kb_retract(temp)
-                
+
 
         if isinstance(f_r, Fact) and len(f_r.supported_by) == 0:
             del self.facts[ind]
+
+    result = ""
 
     def kb_explain(self, fact_or_rule):
         """
@@ -203,15 +205,28 @@ class KnowledgeBase(object):
         """
         ####################################################
         # Student code goes here
-        """
-        if fact_or_rule in self.facts:
-            ind = self.facts.index(fact_or_rule)
-            f_r = self.facts[ind]
-        elif fact_or_rule in self.rules:
-            ind = self.rules.index(fact_or_rule)
-            f_r = self.rules[ind]
-        else:
-            return False
+
+
+        if isinstance(fact_or_rule, Fact):
+            if fact_or_rule in self.facts:
+                self.result += "fact: " + (str(fact_or_rule.statement)) + '\n'
+                ans = self._get_fact(fact_or_rule)
+            else:
+                return "Fact is not in the KB"
+        if isinstance(fact_or_rule, Rule):
+            if fact_or_rule in self.rules:
+                self.result += "rule: ("
+                for left in fact_or_rule.lhs:
+                    self.result += str(left) + ", "
+                ans = self._get_rule(fact_or_rule)
+            else:
+                return "Rule is not in the KB"
+        # call helper
+        self.helper(ans, 0)
+        return self.result
+
+
+
         """
         f_r = self.find_in_kb(fact_or_rule)
         if f_r == False:
@@ -222,16 +237,10 @@ class KnowledgeBase(object):
             else:
                 return False
 
-
-        #if isinstance(f_r, Fact) and len(f_r.supported_by) == 0:
-        #        return "Fact is not in the KB"
-        #if isinstance(f_r, Rule) and len(f_r.supported_by) == 0:
-        #        return "Rule is not in the KB"
-        
         string_answer = ""
         if len(f_r.supported_by) == 0:
             if isinstance(f_r, Fact):
-                string_answer += "fact: "   
+                string_answer += "fact: "
                 string_answer += str(f_r.statement)
                 string_answer += " ASSERTED"
             if isinstance(f_r, Rule):
@@ -253,7 +262,7 @@ class KnowledgeBase(object):
 
 
         if len(f_r.supported_by) > 0:
-            stack = [] 
+            stack = []
             if isinstance(f_r, Fact):
                 string_answer += "fact: "
                 string_answer += str(f_r.statement)
@@ -266,15 +275,15 @@ class KnowledgeBase(object):
                 string_answer += str(f_r.rhs)
                 string_answer += '\n'
 
-            spaces = "  " 
+            spaces = "  "
             counter = -2
             for supports in f_r.supported_by:
                 stack.append([supports, counter])
             stack = stack[::-1]
-            
+
             while len(stack) > 0:
                 tmp = stack.pop()
-                
+
                 #print(tmp[0][0])
 
                 new_fr1 = self.find_in_kb(tmp[0][0])
@@ -282,22 +291,22 @@ class KnowledgeBase(object):
                 new_counter = tmp[1]
                 new_counter += 4
 
-                #string_answer += "                    " 
+                #string_answer += "                    "
                 #string_answer += str(new_counter)
                 s = self.make_str(new_counter)
                 string_answer += s
-                #string_answer += spaces 
+                #string_answer += spaces
                 string_answer += "SUPPORTED BY\n"
 
-                if isinstance(new_fr1, Fact) and isinstance(new_fr2, Rule): 
-                    string_answer += s 
+                if isinstance(new_fr1, Fact) and isinstance(new_fr2, Rule):
+                    string_answer += s
                     string_answer += "  "
                     string_answer += "fact: "
                     string_answer += str(new_fr1.statement)
                     if self.is_asserted(new_fr1):
                         string_answer += " ASSERTED"
                     string_answer += '\n'
-                    string_answer += s 
+                    string_answer += s
                     string_answer += "  "
                     string_answer += "rule: ("
                     if len(new_fr2.lhs) > 1:
@@ -318,14 +327,14 @@ class KnowledgeBase(object):
                     string_answer += '\n'
 
                 if isinstance(new_fr2, Fact) and isinstance(new_fr1, Rule):
-                    string_answer += s 
+                    string_answer += s
                     string_answer += "  "
                     string_answer += "fact: "
                     string_answer += str(new_fr2.statement)
                     if self.is_asserted(new_fr2):
                         string_answer += " ASSERTED"
                     string_answer += '\n'
-                    string_answer += s 
+                    string_answer += s
                     string_answer += "  "
                     string_answer += "rule: ("
                     if len(new_fr2.lhs) > 1:
@@ -345,25 +354,69 @@ class KnowledgeBase(object):
                         string_answer += " ASSERTED"
                     string_answer += '\n'
                 #print('wwwwwwwwwww', type(new_fr))
-                if new_fr1 != False and new_fr2 != False: 
-                    
+                if new_fr1 != False and new_fr2 != False:
+
                     #for supports in new_fr1.supported_by:
                     #    stack.append([supports,new_counter])
                     #for i in range(len(new_fr1.supported_by), 0, -1):
                     #    print('--------------- this far' , i)
-                    #    stack.append([new_fr1.supported_by[i], new_counter]) 
+                    #    stack.append([new_fr1.supported_by[i], new_counter])
                     if len(new_fr1.supported_by) > 0:
                         for j in reversed(range(0, len(new_fr1.supported_by))):
-                            stack.append([new_fr1.supported_by[j], new_counter])    
-                    
+                            stack.append([new_fr1.supported_by[j], new_counter])
+
                     #for supports in new_fr2.supported_by:
                     #    stack.append([supports,new_counter])
                     if len(new_fr2.supported_by) > 0:
                         for j in reversed(range(0, len(new_fr2.supported_by))):
                             stack.append([new_fr2.supported_by[j], new_counter])
-                    
-            
+
+
         return string_answer
+        """
+
+
+    def helper(self, fact_or_rule, indents):
+        if len(fact_or_rule.supported_by) > 0 and len(fact_or_rule.supported_by[0]) > 0:
+            for i in range(len(fact_or_rule.supported_by)):
+                spaces = ""
+                for k in range(indents+2):
+                    spaces += " "
+                self.result += spaces + "SUPPORTED BY" + '\n'
+                for support in fact_or_rule.supported_by[i]:
+                    self.result += "  "
+                    if isinstance(support, Fact):
+                        next_fr = self._get_fact(support)
+                        space = ""
+                        for i in range(indents+2):
+                            space += " "
+                        self.result += space + "fact: " + str(next_fr.statement)
+                        if not next_fr.supported_by:
+                            self.result += " ASSERTED"
+                        self.result += "\n"
+                    elif isinstance(support, Rule):
+                        next_fr = self._get_rule(support)
+                        space = ""
+                        for i in range(indents+2):
+                            space += " "
+                        self.result += space + "rule: ("
+                        for i in range(len(next_fr.lhs)):
+                            if i == len(next_fr.lhs) - 1:
+                                self.result += str(next_fr.lhs[i])
+                                break
+                            self.result += str(next_fr.lhs[i]) + ", "
+                        self.result += ") -> " + str(next_fr.rhs)
+                        if not next_fr.supported_by:
+                            self.result += " ASSERTED"
+                        self.result += "\n"
+                    else:
+                        return
+                    indents += 2
+
+                    self.helper(next_fr, indents+2)
+
+                    indents -= 2
+        return self.result
 
     def find_in_kb(self, fact_or_rule):
         if isinstance(fact_or_rule, Fact) and fact_or_rule in self.facts:
@@ -375,7 +428,7 @@ class KnowledgeBase(object):
         else:
             return False
     def is_asserted(self, fact_or_rule):
-        if len(fact_or_rule.supported_by) == 0:
+        if not next_fr.supported_by:
             return True
         else:
             return False
@@ -394,29 +447,29 @@ class InferenceEngine(object):
             rule (Rule) - A rule from the KnowledgeBase
             kb (KnowledgeBase) - A KnowledgeBase
         Returns:
-            Nothing            
+            Nothing
         """
         printv('Attempting to infer from {!r} and {!r} => {!r}', 1, verbose,
             [fact.statement, rule.lhs, rule.rhs])
         ####################################################
         # Student code goes here
 
-        # 
+        #
 
         binding = match(fact.statement, rule.lhs[0])
-        
+
         if binding and len(rule.lhs) == 1:
             s = instantiate(rule.rhs, binding)
             # when do i construct fact with [fact,rule] vs [fact]???????????
-            
-            #only call constructor if new 
-            # find "f" in self.facts.. if not in self.facts construct new 
+
+            #only call constructor if new
+            # find "f" in self.facts.. if not in self.facts construct new
             # otherwise append the supports_facts and supports_rules
-            
+
 
             f = Fact(s, [fact,rule])
             #print(f.statement, '------------------------------------')
-            
+
             kb.kb_assert(f)
             #print(',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,', type(f))
 
@@ -426,15 +479,15 @@ class InferenceEngine(object):
                 #print([fact,rule], '\n\n=++++++++++++++++++++++++++++++++++++++++++++++++')
 
 
-        elif binding and len(rule.lhs) > 1: 
+        elif binding and len(rule.lhs) > 1:
             s_r = instantiate(rule.rhs, binding)
-            
-            
+
+
             lhs_statements = []
             for i in rule.lhs:
                 lhs_statements.append(instantiate(i, binding))
 
-            del lhs_statements[0] 
+            del lhs_statements[0]
 
             # SAME LOGIC FOR RULE, BASED ON FACT
             new_rule = Rule([lhs_statements, s_r], [fact, rule])
